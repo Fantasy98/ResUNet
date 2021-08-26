@@ -1,0 +1,6 @@
+tensorflow-gpu==2.6.0
+albumentations
+scikit-learn
+opencv-python
+tqdm
+pydot

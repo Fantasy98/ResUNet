@@ -1,0 +1,14 @@
+
+.idea/
+
+logs/
+results/
+aug_data/
+dataset/CVC-ClinicDB/
+
+*.pdf
+model.png
+
+__pycache__/
+*.py[cod]
+*$py.class
