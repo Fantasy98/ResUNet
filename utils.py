@@ -77,8 +77,10 @@ def load_model_weight(path):
     with CustomObjectScope({
         'dice_coef': dice_coef,
         'dice_loss': dice_loss,
-        'bce_dice_loss': bce_dice_loss,
-        'weighted_cross_entropy': weighted_cross_entropy
+        'focal_loss': focal_loss,
+        'dice_focal_loss': dice_focal_loss,
+        'dice_topk_loss': dice_topk_loss,
+        'focal_tversky_loss': focal_tversky_loss
     }):
         model = load_model(path)
     return model

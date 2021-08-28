@@ -32,6 +32,7 @@ if __name__ == "__main__":
     ckpt_path = "logs/ckpt/" + timestamp + ".h5"
     csv_path = "logs/csv/" + timestamp + ".csv"
     log_dir = "logs/fit/" + timestamp
+    create_dir("logs/csv/")
 
     batch_size = 4
     epochs = 300
@@ -51,7 +52,7 @@ if __name__ == "__main__":
         Precision()
     ]
 
-    model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=metrics)
+    model.compile(loss=dice_loss, optimizer=optimizer, metrics=metrics)
 
     callbacks = [
         ModelCheckpoint(ckpt_path, verbose=1, save_best_only=True),
