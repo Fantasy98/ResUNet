@@ -60,15 +60,6 @@ if __name__ == "__main__":
     create_dir("results/")
 
     batch_size = 8
-    lr = 1e-5
-
-    optimizer = Nadam(learning_rate=lr)
-    metrics = [
-        dice_coef,
-        MeanIoU(num_classes=2),
-        Recall(),
-        Precision()
-    ]
 
     test_path = "aug_data/test/"
 

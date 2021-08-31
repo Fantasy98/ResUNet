@@ -35,7 +35,7 @@ if __name__ == "__main__":
     create_dir("logs/csv/")
 
     batch_size = 4
-    epochs = 300
+    epochs = 250
     lr = 1e-5
 
     train_dataset = tf_dataset(train_x, train_y, batch=batch_size)
