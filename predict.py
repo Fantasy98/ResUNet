@@ -1,73 +1,53 @@
-from glob import glob
-
-from tensorflow.keras.metrics import Recall, Precision, MeanIoU
-from tensorflow.keras.optimizers import Nadam
 from tqdm import tqdm
 
 from utils import *
 
 
-def read_image(x):
-    image = cv2.imread(x, cv2.IMREAD_COLOR)
-    image = np.clip(image - np.median(image) + 127, 0, 255)
-    image = image / 255.0
-    image = image.astype(np.float32)
-    image = np.expand_dims(image, axis=0)
-    return image
-
-
-def read_mask(y):
-    mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)
-    mask = mask.astype(np.float32)
-    mask = mask / 255.0
-    mask = np.expand_dims(mask, axis=-1)
-    return mask
-
-
 def mask_to_3d(mask):
+    """
+    Convert 1D mask to 3D.
+    """
     mask = np.squeeze(mask)
     mask = [mask, mask, mask]
     mask = np.transpose(mask, (1, 2, 0))
+
     return mask
 
 
-def evaluate_normal(model, x_data, y_data):
-    for i, (x, y) in tqdm(enumerate(zip(x_data, y_data)), total=len(x_data)):
+def write_result(model, test_x, test_y, save_path):
+    """
+    Concatenate images, ground truth and predictions, and write the results.
+    """
+    create_dir(save_path)
+
+    for i, (x, y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
         x = read_image(x)
         y = read_mask(y)
-        _, h, w, _ = x.shape
+        x = np.expand_dims(x, axis=0)  # Convert from [H, W, C] to [N, H, W, C]
+        h = x.shape[1]
 
         y_pred = model.predict(x)[0]
-        y_pred = (y_pred > 0.5) * 255.0
+        y_pred = (y_pred > 0.5) * 255.
 
-        line = np.ones((h, 10, 3)) * 255.0
+        sep_line = np.ones((h, 10, 3)) * 255.
 
         all_images = [
-            x[0] * 255.0, line,
-            mask_to_3d(y) * 255.0, line,
+            x[0] * 255., sep_line,
+            mask_to_3d(y) * 255., sep_line,
             mask_to_3d(y_pred)
         ]
         result = np.concatenate(all_images, axis=1)
 
-        cv2.imwrite(f"results/{i}.png", result)
+        cv2.imwrite(os.path.join(save_path, f"{i}.png"), result)
 
 
-if __name__ == "__main__":
-    np.random.seed(42)
-    tf.random.set_seed(42)
+def evaluate(model_path, test_dataset_path, save_path, cross_dataset):
+    """
+    Evaluate the model and write the results.
+    """
+    test_x, test_y = load_dataset(test_dataset_path, cross_dataset=cross_dataset)
 
-    model_path = "logs/ckpt/timestamp.h5"
-    create_dir("results/")
-
-    batch_size = 8
-
-    test_path = "aug_data/test/"
-
-    test_x = sorted(glob(os.path.join(test_path, "image", "*.jpg")))
-    test_y = sorted(glob(os.path.join(test_path, "mask", "*.jpg")))
-
-    test_dataset = tf_dataset(test_x, test_y, batch=batch_size)
-
+    test_dataset = tf_dataset(test_x, test_y, batch_size=batch_size)
     test_steps = (len(test_x) // batch_size)
 
     if len(test_x) % batch_size != 0:
@@ -75,4 +55,34 @@ if __name__ == "__main__":
 
     model = load_model_weight(model_path)
     model.evaluate(test_dataset, steps=test_steps)
-    evaluate_normal(model, test_x, test_y)
+    write_result(model, test_x, test_y, save_path)
+
+
+def test(model_path, training_dataset):
+    """
+    Evaluate the model, including cross-dataset evaluation for its generalizability,
+    in which case the test dataset is different from the training dataset.
+    Args:
+        model_path: Path from which to load the trained model.
+        training_dataset: Dataset on which the model is trained.
+    """
+    for test_dataset in ["CVC-ClinicDB", "CVC-ColonDB", "ETIS-LaribPolypDB", "Kvasir-SEG"]:
+        if test_dataset == training_dataset:
+            cross_dataset = False
+            test_dataset_path = f"aug_data/{test_dataset}/test/"
+            save_path = f"results/{test_dataset}/"
+        else:
+            cross_dataset = True
+            test_dataset_path = f"dataset/{test_dataset}/"
+            save_path = f"results/{training_dataset}_X_{test_dataset}/"
+
+        evaluate(model_path, test_dataset_path=test_dataset_path, save_path=save_path, cross_dataset=cross_dataset)
+
+
+if __name__ == "__main__":
+    np.random.seed(42)
+    tf.random.set_seed(42)
+
+    batch_size = 8
+    model_path = "logs/ckpt/timestamp.h5"  # Replace with your model path
+    test(model_path, training_dataset="CVC-ClinicDB")

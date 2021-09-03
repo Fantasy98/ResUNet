@@ -6,6 +6,10 @@ from tensorflow.keras.utils import plot_model
 
 
 def squeeze_excite_block(inputs, ratio=8):
+    """
+    Squeeze-and-Excitation block, which is one of `channel-attention` mechanisms.
+    See: https://arxiv.org/pdf/1709.01507.pdf
+    """
     filters = inputs.shape[-1]
     se_shape = (1, 1, filters)
 
@@ -36,6 +40,10 @@ def stem_block(inputs, filters, strides):
 
 
 def aspp_block(inputs, filters):
+    """
+    Atrous spatial pyramid pooling to capture multi-scale context.
+    See: https://arxiv.org/pdf/1706.05587.pdf
+    """
     shape = inputs.shape
 
     x1 = AveragePooling2D(pool_size=(shape[1], shape[2]))(inputs)
@@ -71,10 +79,11 @@ def aspp_block(inputs, filters):
 
 def attention_block(e, d):
     """
-        e: Output of Parallel Encoder block
-        d: Output of Previous Decoder block
+    Attention mechanism taking advantage of low-level features.
+    Args:
+        e: output of parallel Encoder block
+        d: output of previous Decoder block
     """
-
     filters = d.shape[-1]
 
     x1 = BatchNormalization()(e)
@@ -98,6 +107,9 @@ def attention_block(e, d):
 
 
 def cbam_resblock(inputs, filters, strides=1):
+    """
+    Residual block with Convolutional Block Attention Module.
+    """
     # Conv
     x = BatchNormalization()(inputs)
     x = Activation("relu")(x)
@@ -123,8 +135,8 @@ def cbam_block(inputs):
     """
     CBAM: Convolutional Block Attention Module, which combines
     Channel Attention Module and Spatial Attention Module, focusing on
-    ‘what’ and ‘where’ respectively. The sequential channel-spatial order performs best.
-
+    `what` and `where` respectively. The sequential channel-spatial order
+    proves to perform best.
     See: http://dx.doi.org/10.1007/978-3-030-01234-2_1
     """
     x = channel_attention_block(inputs)
@@ -133,6 +145,9 @@ def cbam_block(inputs):
 
 
 def channel_attention_block(inputs, ratio=16):
+    """
+    Channel Attention Module exploiting the inter-channel relationship of features.
+    """
     shape = inputs.shape
     filters = shape[-1]
 
@@ -157,6 +172,9 @@ def channel_attention_block(inputs, ratio=16):
 
 
 def spatial_attention_block(inputs):
+    """
+    Spatial Attention Module utilizing the inter-spatial relationship of features.
+    """
     kernel_size = 7
 
     # avg_pool = Lambda(lambda x: K.mean(x, axis=-1, keepdims=True))(inputs)
@@ -181,6 +199,9 @@ def spatial_attention_block(inputs):
 
 
 def build_model(shape):
+    """
+    Build the model with fixed input shape [N, H, W, C].
+    """
     n_filters = [32, 64, 128, 256, 512]
 
     inputs = Input(shape)
@@ -199,9 +220,7 @@ def build_model(shape):
 
     # Decoder
     """ 
-    Nearest-neighbor UpSampling followed by Conv2D & ReLU 
-    to avoid additional regularization term.
-    
+    Nearest-neighbor UpSampling followed by Conv2D & ReLU to dampen checkerboard artifacts.
     See: https://distill.pub/2016/deconv-checkerboard/
     """
     d1 = attention_block(connections[3], b1)

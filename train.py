@@ -1,5 +1,4 @@
 from datetime import datetime
-from glob import glob
 
 from tensorflow.keras.callbacks import *
 from tensorflow.keras.metrics import Precision, Recall, MeanIoU
@@ -8,43 +7,22 @@ from tensorflow.keras.optimizers import Nadam
 from model import build_model
 from utils import *
 
-if __name__ == "__main__":
-    np.random.seed(42)
-    tf.random.set_seed(42)
 
-    train_path = "aug_data/train/"
-    valid_path = "aug_data/valid/"
+def train(training_dataset):
+    train_path = f"aug_data/{training_dataset}/train/"
+    valid_path = f"aug_data/{training_dataset}/valid/"
 
-    # Training
-    train_x = sorted(glob(os.path.join(train_path, "image", "*.jpg")))
-    train_y = sorted(glob(os.path.join(train_path, "mask", "*.jpg")))
+    train_x, train_y = load_dataset(train_path, cross_dataset=False)
+    train_x, train_y = shuffle_data(train_x, train_y)  # Shuffle
+    valid_x, valid_y = load_dataset(valid_path, cross_dataset=False)
 
-    # Shuffling
-    train_x, train_y = shuffling(train_x, train_y)
-
-    # Validation
-    valid_x = sorted(glob(os.path.join(valid_path, "image", "*.jpg")))
-    valid_y = sorted(glob(os.path.join(valid_path, "mask", "*.jpg")))
-
-    # Place the logs in a timestamped subdirectory to allow easy selection of different training runs
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-
-    ckpt_path = "logs/ckpt/" + timestamp + ".h5"
-    csv_path = "logs/csv/" + timestamp + ".csv"
-    log_dir = "logs/fit/" + timestamp
-    create_dir("logs/csv/")
-
-    batch_size = 4
-    epochs = 250
-    lr = 1e-5
-
-    train_dataset = tf_dataset(train_x, train_y, batch=batch_size)
-    valid_dataset = tf_dataset(valid_x, valid_y, batch=batch_size)
+    train_dataset = tf_dataset(train_x, train_y, batch_size=batch_size)
+    valid_dataset = tf_dataset(valid_x, valid_y, batch_size=batch_size)
 
     shape = (288, 384, 3)
     model = build_model(shape)
 
-    optimizer = Nadam(learning_rate=lr)
+    optimizer = Nadam(learning_rate=learning_rate)
     metrics = [
         dice_coef,
         MeanIoU(num_classes=2),
@@ -78,3 +56,22 @@ if __name__ == "__main__":
               callbacks=callbacks,
               epochs=epochs,
               shuffle=False)
+
+
+if __name__ == "__main__":
+    np.random.seed(42)
+    tf.random.set_seed(42)
+
+    # Place the logs in a timestamped subdirectory to allow easy selection of different training runs
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    ckpt_path = "logs/ckpt/" + timestamp + ".h5"
+    csv_path = "logs/csv/" + timestamp + ".csv"
+    log_dir = "logs/fit/" + timestamp
+    create_dir("logs/csv/")
+
+    batch_size = 4
+    epochs = 250
+    learning_rate = 1e-5
+
+    train(training_dataset="CVC-ClinicDB")

@@ -1,5 +1,3 @@
-from glob import glob
-
 from albumentations import *
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -10,11 +8,10 @@ from utils import *
 def augment_data(images, masks, save_path, augment=True):
     """
     Data augmentation using albumentations.
-
     See: https://github.com/albumentations-team/albumentations
     """
-    size = (384, 288)
-    crop_size = (288 - 32, 384 - 32)
+    size = (384, 288)  # [W, H]
+    crop_size = (288 - 32, 384 - 32)  # [H, W]
 
     for image, mask in tqdm(zip(images, masks), total=len(images)):
         image_name = image.split("\\")[-1].split(".")[0]
@@ -23,12 +20,13 @@ def augment_data(images, masks, save_path, augment=True):
         x, y = read_data(image, mask)
 
         if augment:
-            aug = CenterCrop(p=1, height=crop_size[0], width=crop_size[1])
+            # Choose the minimum of crop size and image shape
+            aug = CenterCrop(p=1, height=min(crop_size[0], x.shape[0]), width=min(crop_size[1], x.shape[1]))
             augmented = aug(image=x, mask=y)
             x1 = augmented['image']
             y1 = augmented['mask']
 
-            aug = RandomCrop(p=1, height=crop_size[0], width=crop_size[1])
+            aug = RandomCrop(p=1, height=min(crop_size[0], x.shape[0]), width=min(crop_size[1], x.shape[1]))
             augmented = aug(image=x, mask=y)
             x2 = augmented['image']
             y2 = augmented['mask']
@@ -72,7 +70,7 @@ def augment_data(images, masks, save_path, augment=True):
             x10 = cv2.cvtColor(x, cv2.COLOR_RGB2GRAY)
             y10 = y
 
-            aug = CenterCrop(p=1, height=crop_size[0], width=crop_size[1])
+            aug = CenterCrop(p=1, height=min(crop_size[0], x.shape[0]), width=min(crop_size[1], x.shape[1]))
             augmented = aug(image=x10, mask=y10)
             x11 = augmented['image']
             y11 = augmented['mask']
@@ -167,11 +165,11 @@ def augment_data(images, masks, save_path, augment=True):
             i = cv2.resize(i, size)
             m = cv2.resize(m, size)
 
-            tmp_image_name = f"{image_name}_{idx}.jpg"
-            tmp_mask_name = f"{mask_name}_{idx}.jpg"
+            tmp_image_name = f"{image_name}_{idx}.png"
+            tmp_mask_name = f"{mask_name}_{idx}.png"
 
-            image_path = os.path.join(save_path, "image/", tmp_image_name)
-            mask_path = os.path.join(save_path, "mask/", tmp_mask_name)
+            image_path = os.path.join(save_path, "images/", tmp_image_name)
+            mask_path = os.path.join(save_path, "masks/", tmp_mask_name)
 
             cv2.imwrite(image_path, i)
             cv2.imwrite(mask_path, m)
@@ -183,13 +181,12 @@ def load_data(path, split=0.1):
     """
     Load the data and split them into random train, validation and test subsets.
     """
-    img_path = sorted(glob(os.path.join(path, "Original/*")))
-    msk_path = sorted(glob(os.path.join(path, "Ground Truth/*")))
+    images, masks = load_dataset(path)
 
-    test_size = int(split * len(img_path))
+    test_size = int(split * len(images))
 
-    train_x, valid_x = train_test_split(img_path, test_size=test_size, random_state=42)
-    train_y, valid_y = train_test_split(msk_path, test_size=test_size, random_state=42)
+    train_x, valid_x = train_test_split(images, test_size=test_size, random_state=42)
+    train_y, valid_y = train_test_split(masks, test_size=test_size, random_state=42)
 
     train_x, test_x = train_test_split(train_x, test_size=test_size, random_state=42)
     train_y, test_y = train_test_split(train_y, test_size=test_size, random_state=42)
@@ -197,19 +194,26 @@ def load_data(path, split=0.1):
     return (train_x, train_y), (valid_x, valid_y), (test_x, test_y)
 
 
+def augment(dataset):
+    """
+    Apply augmentation to the training dataset while keeping the valid and test dataset as they are.
+    """
+    data_path = f"dataset/{dataset}/"
+    aug_data_path = f"aug_data/{dataset}/"
+
+    for dir in ["train", "valid", "test"]:
+        for subdir in ["images", "masks"]:
+            create_dir(os.path.join(aug_data_path, dir, subdir))
+
+    (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(data_path)
+
+    augment_data(train_x, train_y, save_path=os.path.join(aug_data_path, "train/"), augment=True)
+    augment_data(valid_x, valid_y, save_path=os.path.join(aug_data_path, "valid/"), augment=False)
+    augment_data(test_x, test_y, save_path=os.path.join(aug_data_path, "test/"), augment=False)
+
+
 if __name__ == "__main__":
     np.random.seed(42)
-    dataset_dir = "dataset/CVC-ClinicDB/"
 
-    create_dir("aug_data/train/image/")
-    create_dir("aug_data/train/mask/")
-    create_dir("aug_data/valid/image/")
-    create_dir("aug_data/valid/mask/")
-    create_dir("aug_data/test/image/")
-    create_dir("aug_data/test/mask/")
-
-    (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(dataset_dir)
-
-    augment_data(train_x, train_y, "aug_data/train/", augment=True)
-    augment_data(valid_x, valid_y, "aug_data/valid/", augment=False)
-    augment_data(test_x, test_y, "aug_data/test/", augment=False)
+    for dataset in ["CVC-ClinicDB", "CVC-ColonDB", "ETIS-LaribPolypDB", "Kvasir-SEG"]:
+        augment(dataset=dataset)

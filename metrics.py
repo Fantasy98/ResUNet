@@ -13,7 +13,7 @@ smooth = K.epsilon()
 
 def flatten(y_true, y_pred):
     """
-    Flatten a tensor into 1-D.
+    Flatten tensors to 1D.
     """
     y_true = K.flatten(y_true)
     y_pred = K.flatten(y_pred)
@@ -57,7 +57,7 @@ def weighted_cross_entropy(y_true, y_pred):
 
 def dice_coef(y_true, y_pred):
     """
-    Sørensen–Dice coefficient (F1 score).
+    Sørensen–Dice coefficient (aka F1 score).
     See: https://arxiv.org/pdf/1608.04117.pdf
     """
     y_true, y_pred = flatten(y_true, y_pred)

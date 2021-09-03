@@ -18,14 +18,14 @@ The network takes advantage of residual blocks, atrous spatial pyramid pooling, 
 
 ## Datasets
 
-The following datasets are used in the experiments:
+The following publicly available datasets are used in the experiments:
 
-<ul>
-    <li><a href="https://polyp.grand-challenge.org/CVCClinicDB/">CVC-ClinicDB</a></li>
-    <li><a href="http://mv.cvc.uab.es/projects/colon-qa/cvccolondb">CVC-ColonDB</a></li>
-    <li><a href="https://polyp.grand-challenge.org/EtisLarib/">ETIS-Larib polyp DB</a></li>
-    <li><a href="https://datasets.simula.no/kvasir-seg/">Kvasir-SEG</a></li>
-</ul>
+| Dataset                                                      | Number of mages | Image shape (W x H) |
+| ------------------------------------------------------------ | --------------- | ------------------- |
+| [CVC-ClinicDB](https://polyp.grand-challenge.org/CVCClinicDB/) | 612             | 384 x 288           |
+| [CVC-ColonDB](https://drive.google.com/file/d/1S0GvCLOoSiePEiJJkX3r-RCd34PHFyQF/view?usp=sharing) | 380             | 574 x 500           |
+| [ETIS-LaribPolypDB](https://polyp.grand-challenge.org/EtisLarib/) | 196             | 1225 x 966          |
+| [Kvasir-SEG](https://datasets.simula.no/kvasir-seg/)         | 1000            | Variable            |
 
 ## Image preprocessing
 
@@ -47,11 +47,11 @@ After these operations, the number of training samples increased by 25 times.
 
 ## Hyperparameters
 
-- Bacth size: 16
+- Bacth size: 4
 - Epochs: 250
 - Learning rate: 1e-5
 - Optimizer: Nadam
-- Loss: binary crossentropy
+- Loss: Dice loss
 
 ## Configurations for CUDA and cuDNN
 
