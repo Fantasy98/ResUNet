@@ -14,13 +14,13 @@ def augment_data(images, masks, save_path, augment=True):
     crop_size = (288 - 32, 384 - 32)  # [H, W]
 
     for image, mask in tqdm(zip(images, masks), total=len(images)):
-        image_name = image.split("\\")[-1].split(".")[0]
-        mask_name = mask.split("\\")[-1].split(".")[0]
+        image_name = get_filename(image)
+        mask_name = get_filename(mask)
 
         x, y = read_data(image, mask)
 
         if augment:
-            # Choose the minimum of crop size and image shape
+            # Choose the minimum of crop size and image shape in case of overflow
             aug = CenterCrop(p=1, height=min(crop_size[0], x.shape[0]), width=min(crop_size[1], x.shape[1]))
             augmented = aug(image=x, mask=y)
             x1 = augmented['image']
@@ -160,8 +160,7 @@ def augment_data(images, masks, save_path, augment=True):
             images = [x]
             masks = [y]
 
-        idx = 0
-        for i, m in zip(images, masks):
+        for idx, (i, m) in enumerate(zip(images, masks)):
             i = cv2.resize(i, size)
             m = cv2.resize(m, size)
 
@@ -173,8 +172,6 @@ def augment_data(images, masks, save_path, augment=True):
 
             cv2.imwrite(image_path, i)
             cv2.imwrite(mask_path, m)
-
-            idx += 1
 
 
 def load_data(path, split=0.1):

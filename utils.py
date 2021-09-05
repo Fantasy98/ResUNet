@@ -7,6 +7,7 @@ import numpy as np
 from sklearn.utils import shuffle
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import CustomObjectScope
+from tifffile import tifffile
 
 from metrics import *
 
@@ -22,44 +23,71 @@ def create_dir(path):
         print(f"Creating directory {path} failed")
 
 
+def get_filename(file):
+    """
+    Extract filename.
+    """
+    filename = file.split("\\")[-1].split(".")[0]
+    return filename
+
+
+def get_extension(file):
+    """
+    Extract extension.
+    """
+    extension = file.split("\\")[-1].split(".")[-1]
+    return extension
+
+
 def read_data(image, mask):
     """
-    Read the image and mask in COLOR mode.
+    Read the image and mask with shape [H, W, C] and [H, W] respectively.
+    Use `tifffile` to read .tiff images instead of `cv2`, because the latter has trouble
+    dealing with CVC-ClinicDB original images (colorful images become, er, grayscale?).
     """
-    image = cv2.imread(image, cv2.IMREAD_COLOR)
-    mask = cv2.imread(mask, cv2.IMREAD_COLOR)
+    if isinstance(image, bytes):
+        image = image.decode()
+
+    if isinstance(mask, bytes):
+        mask = mask.decode()
+
+    image_ext = get_extension(image)
+    mask_ext = get_extension(mask)
+
+    if image_ext in ["tif", "tiff"]:
+        image = tifffile.imread(image)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # cv2 uses BGR channel order
+    else:
+        image = cv2.imread(image, cv2.IMREAD_COLOR)
+
+    if mask_ext in ["tif", "tiff"]:
+        mask = tifffile.imread(mask)
+    else:
+        mask = cv2.imread(mask, cv2.IMREAD_GRAYSCALE)
 
     return image, mask
 
 
-def read_image(image):
+def normalize(image):
     """
-    Read and normalize the image. Resize it for cross-dataset evaluation.
+    Normalize the image/mask. Resize it for cross-dataset evaluation.
     """
-    if isinstance(image, bytes):
-        image = image.decode()
-    image = cv2.imread(image, cv2.IMREAD_COLOR)
     image = cv2.resize(image, (384, 288))
-    image = np.clip(image - np.median(image) + 127, 0, 255)
     image = image / 255.
     image = image.astype(np.float32)
 
     return image
 
 
-def read_mask(mask):
+def read_and_normalize_data(image, mask):
     """
-    Read and normalize the mask. Resize it for cross-dataset evaluation.
+    Read and normalize the image and mask.
     """
-    if isinstance(mask, bytes):
-        mask = mask.decode()
-    mask = cv2.imread(mask, cv2.IMREAD_GRAYSCALE)
-    mask = cv2.resize(mask, (384, 288))
-    mask = mask / 255.
-    mask = mask.astype(np.float32)
-    mask = np.expand_dims(mask, axis=-1)
+    image, mask = read_data(image, mask)
+    image = normalize(image)
+    mask = normalize(mask)
 
-    return mask
+    return image, mask
 
 
 def parse_data(images, masks):
@@ -68,8 +96,8 @@ def parse_data(images, masks):
     """
 
     def _parse(image, mask):
-        image = read_image(image)
-        mask = read_mask(mask)
+        image, mask = read_and_normalize_data(image, mask)
+        mask = np.expand_dims(mask, axis=-1)
         return image, mask
 
     images, masks = tf.numpy_function(_parse, [images, masks], [tf.float32, tf.float32])

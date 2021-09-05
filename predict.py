@@ -3,41 +3,39 @@ from tqdm import tqdm
 from utils import *
 
 
-def mask_to_3d(mask):
+def mask_to_3c(mask):
     """
-    Convert 1D mask to 3D.
+    Convert single-channel mask to 3-channel (288, 384, 1) -> (288, 384, 3).
     """
-    mask = np.squeeze(mask)
-    mask = [mask, mask, mask]
-    mask = np.transpose(mask, (1, 2, 0))
-
+    mask = np.repeat(mask, 3, axis=-1)
     return mask
 
 
 def write_result(model, test_x, test_y, save_path):
     """
-    Concatenate images, ground truth and predictions, and write the results.
+    Write the image, ground truth and prediction into one single image.
     """
     create_dir(save_path)
 
     for i, (x, y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
-        x = read_image(x)
-        y = read_mask(y)
+        x, y = read_and_normalize_data(x, y)
+
         x = np.expand_dims(x, axis=0)  # Convert from [H, W, C] to [N, H, W, C]
+        y = np.expand_dims(y, axis=-1)  # Convert from [H, W] to [H, W, C]
+
+        y_pred = K.round(model.predict(x)[0])  # Round predictions to 0 or 1 element-wise
+
         h = x.shape[1]
-
-        y_pred = model.predict(x)[0]
-        y_pred = (y_pred > 0.5) * 255.
-
-        sep_line = np.ones((h, 10, 3)) * 255.
+        sep_line = np.ones((h, 10, 3))
 
         all_images = [
-            x[0] * 255., sep_line,
-            mask_to_3d(y) * 255., sep_line,
-            mask_to_3d(y_pred)
+            x[0], sep_line,
+            mask_to_3c(y), sep_line,
+            mask_to_3c(y_pred)
         ]
-        result = np.concatenate(all_images, axis=1)
+        all_images = [*map(lambda x: x * 255., all_images)]
 
+        result = np.concatenate(all_images, axis=1)
         cv2.imwrite(os.path.join(save_path, f"{i}.png"), result)
 
 
