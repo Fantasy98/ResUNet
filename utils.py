@@ -4,15 +4,14 @@ from glob import glob
 
 import cv2
 import numpy as np
-from sklearn.utils import shuffle
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import CustomObjectScope
 from tifffile import tifffile
 
-from metrics import *
+from losses import *
 
 
-def create_dir(path):
+def create_dirs(path):
     """
     Create directories if not exist.
     """
@@ -42,8 +41,8 @@ def get_extension(file):
 def read_data(image, mask):
     """
     Read the image and mask with shape [H, W, C] and [H, W] respectively.
-    Use `tifffile` to read .tiff images instead of `cv2`, because the latter has trouble
-    dealing with CVC-ClinicDB original images (colorful images become, er, grayscale?).
+    Use `tifffile` to read TIFF images instead of `cv2`, because the latter has trouble
+    dealing with CVC-ClinicDB original images. (Colorful images become, er, grayscale?)
     """
     if isinstance(image, bytes):
         image = image.decode()
@@ -51,16 +50,22 @@ def read_data(image, mask):
     if isinstance(mask, bytes):
         mask = mask.decode()
 
+    extensions = ["tif", "tiff"]
+
     image_ext = get_extension(image)
     mask_ext = get_extension(mask)
 
-    if image_ext in ["tif", "tiff"]:
+    # > For historical reasons, OpenCV reads an image in BGR format. Albumentations uses
+    # the most common and popular RGB image format. So when using OpenCV, we need to
+    # convert the image format to RGB explicitly.
+    # But it is fine to perform all these operations in BGR color space.
+    if image_ext in extensions:
         image = tifffile.imread(image)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # cv2 uses BGR channel order
     else:
         image = cv2.imread(image, cv2.IMREAD_COLOR)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB color space
 
-    if mask_ext in ["tif", "tiff"]:
+    if mask_ext in extensions:
         mask = tifffile.imread(mask)
     else:
         mask = cv2.imread(mask, cv2.IMREAD_GRAYSCALE)
@@ -70,7 +75,7 @@ def read_data(image, mask):
 
 def normalize(image):
     """
-    Normalize the image/mask. Resize it for cross-dataset evaluation.
+    Normalize the image/mask, and resize it for cross-dataset evaluation.
     """
     image = cv2.resize(image, (384, 288))
     image = image / 255.
@@ -90,17 +95,19 @@ def read_and_normalize_data(image, mask):
     return image, mask
 
 
-def parse_data(images, masks):
+def map_func(images, masks):
     """
     Cast input data type to tf.float32.
     """
 
-    def _parse(image, mask):
+    def func(image, mask):
         image, mask = read_and_normalize_data(image, mask)
         mask = np.expand_dims(mask, axis=-1)
         return image, mask
 
-    images, masks = tf.numpy_function(_parse, [images, masks], [tf.float32, tf.float32])
+    images, masks = tf.numpy_function(func=func, inp=[images, masks], Tout=[tf.float32, tf.float32])
+
+    # Restore dataset shapes (the dataset loses its shape after applying a tf.numpy_function)
     images.set_shape([288, 384, 3])
     masks.set_shape([288, 384, 1])
 
@@ -111,21 +118,13 @@ def tf_dataset(images, masks, batch_size=8):
     """
     Generate tf dataset.
     """
-    dataset = tf.data.Dataset.from_tensor_slices((images, masks))
-    dataset = dataset.shuffle(buffer_size=32)
-    dataset = dataset.map(map_func=parse_data)
-    dataset = dataset.repeat()
-    dataset = dataset.batch(batch_size)
+    dataset = tf.data.Dataset.from_tensor_slices(tensors=(images, masks)) \
+        .map(map_func=map_func) \
+        .shuffle(buffer_size=32) \
+        .batch(batch_size=batch_size) \
+        .prefetch(buffer_size=tf.data.AUTOTUNE)
 
     return dataset
-
-
-def shuffle_data(images, masks):
-    """
-    Shuffle data in a consistent way.
-    """
-    images, masks = shuffle(images, masks, random_state=42)
-    return images, masks
 
 
 def load_model_weight(path):

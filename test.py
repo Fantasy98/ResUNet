@@ -15,7 +15,7 @@ def write_result(model, test_x, test_y, save_path):
     """
     Write the image, ground truth and prediction into one single image.
     """
-    create_dir(save_path)
+    create_dirs(save_path)
 
     for i, (x, y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
         x, y = read_and_normalize_data(x, y)
@@ -59,12 +59,15 @@ def evaluate(model_path, test_dataset_path, save_path, cross_dataset):
 def test(model_path, training_dataset):
     """
     Evaluate the model, including cross-dataset evaluation for its generalizability,
-    in which case the test dataset is different from the training dataset.
+    in which case the test dataset is different from the training one.
+
     Args:
         model_path: Path from which to load the trained model.
         training_dataset: Dataset on which the model is trained.
     """
-    for test_dataset in ["CVC-ClinicDB", "CVC-ColonDB", "ETIS-LaribPolypDB", "Kvasir-SEG"]:
+    datasets = ["CVC-ClinicDB", "CVC-ColonDB", "ETIS-LaribPolypDB", "Kvasir-SEG"]
+
+    for test_dataset in datasets:
         if test_dataset == training_dataset:
             cross_dataset = False
             test_dataset_path = f"aug_data/{test_dataset}/test/"

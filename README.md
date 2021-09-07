@@ -1,8 +1,8 @@
-# Residual U-Net with Attention Mechanism
+# Residual U-Net with Attention Mechanisms
 
-Medical Image Segmentation using Residual U-Net with Attention Mechanism.
+Medical Image Segmentation using Residual U-Net with Attention Mechanisms.
 
-The network takes advantage of residual blocks, atrous spatial pyramid pooling, and channel- and spatial-attention blocks. We take ResNet50 as backbone to facilitate the training process.
+The network takes advantage of residual blocks, Atrous Spatial Pyramid Pooling (ASPP), and channel- and spatial-attention blocks. We take ResNet50 as backbone to facilitate the training process.
 
 ## Network architecture
 

@@ -5,23 +5,6 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.utils import plot_model
 
 
-def squeeze_excite_block(inputs, ratio=8):
-    """
-    Squeeze-and-Excitation block, which is one of `channel-attention` mechanisms.
-    See: https://arxiv.org/pdf/1709.01507.pdf
-    """
-    filters = inputs.shape[-1]
-    se_shape = (1, 1, filters)
-
-    se = GlobalAveragePooling2D()(inputs)
-    se = Reshape(se_shape)(se)
-    se = Dense(filters // ratio, activation='relu', kernel_initializer='he_normal', use_bias=False)(se)
-    se = Dense(filters, activation='sigmoid', kernel_initializer='he_normal', use_bias=False)(se)
-
-    outputs = Multiply()([inputs, se])
-    return outputs
-
-
 def stem_block(inputs, filters, strides):
     # Conv
     x = Conv2D(filters, (3, 3), padding="same", strides=strides)(inputs)
@@ -77,12 +60,15 @@ def aspp_block(inputs, filters):
     return outputs
 
 
-def attention_block(e, d):
+def attention_gate(e, d):
     """
-    Attention mechanism taking advantage of low-level features.
+    Attention gate taking advantage of low-level features.
+
     Args:
         e: output of parallel Encoder block
         d: output of previous Decoder block
+
+    See: https://arxiv.org/pdf/1804.03999.pdf
     """
     filters = d.shape[-1]
 
@@ -106,9 +92,26 @@ def attention_block(e, d):
     return outputs
 
 
-def cbam_resblock(inputs, filters, strides=1):
+def se_block(inputs, ratio=8):
     """
-    Residual block with Convolutional Block Attention Module.
+    Squeeze-and-Excitation block, which is one of `channel-attention` mechanisms.
+    See: https://arxiv.org/pdf/1709.01507.pdf
+    """
+    filters = inputs.shape[-1]
+    se_shape = (1, 1, filters)
+
+    x = GlobalAveragePooling2D()(inputs)
+    x = Reshape(se_shape)(x)
+    x = Dense(filters // ratio, activation='relu', kernel_initializer='he_normal', use_bias=False)(x)
+    x = Dense(filters, activation='sigmoid', kernel_initializer='he_normal', use_bias=False)(x)
+
+    outputs = Multiply()([inputs, x])
+    return outputs
+
+
+def se_resblock(inputs, filters, strides=1):
+    """
+    Residual block with Squeeze-and-Excitation module.
     """
     # Conv
     x = BatchNormalization()(inputs)
@@ -119,8 +122,8 @@ def cbam_resblock(inputs, filters, strides=1):
     x = Activation("relu")(x)
     x = Conv2D(filters, (3, 3), padding="same", strides=1)(x)
 
-    # CBAM
-    x = cbam_block(x)
+    # Squeeze and Excitation
+    x = se_block(x)
 
     # Shortcut
     s = Conv2D(filters, (1, 1), padding="same", strides=strides)(inputs)
@@ -129,19 +132,6 @@ def cbam_resblock(inputs, filters, strides=1):
     # Add
     outputs = Add()([x, s])
     return outputs
-
-
-def cbam_block(inputs):
-    """
-    CBAM: Convolutional Block Attention Module, which combines
-    Channel Attention Module and Spatial Attention Module, focusing on
-    `what` and `where` respectively. The sequential channel-spatial order
-    proves to perform best.
-    See: http://dx.doi.org/10.1007/978-3-030-01234-2_1
-    """
-    x = channel_attention_block(inputs)
-    x = spatial_attention_block(x)
-    return x
 
 
 def channel_attention_block(inputs, ratio=16):
@@ -198,9 +188,47 @@ def spatial_attention_block(inputs):
     return outputs
 
 
+def cbam_block(inputs):
+    """
+    CBAM: Convolutional Block Attention Module, which combines
+    Channel Attention Module and Spatial Attention Module, focusing on
+    `what` and `where` respectively. The sequential channel-spatial order
+    proves to perform best.
+    See: http://dx.doi.org/10.1007/978-3-030-01234-2_1
+    """
+    x = channel_attention_block(inputs)
+    x = spatial_attention_block(x)
+    return x
+
+
+def cbam_resblock(inputs, filters, strides=1):
+    """
+    Residual block with Convolutional Block Attention Module.
+    """
+    # Conv
+    x = BatchNormalization()(inputs)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=strides)(x)
+
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=1)(x)
+
+    # CBAM
+    x = cbam_block(x)
+
+    # Shortcut
+    s = Conv2D(filters, (1, 1), padding="same", strides=strides)(inputs)
+    s = BatchNormalization()(s)
+
+    # Add
+    outputs = Add()([x, s])
+    return outputs
+
+
 def build_model(shape):
     """
-    Build the model with fixed input shape [N, H, W, C].
+    Build a model with fixed input shape [N, H, W, C].
     """
     n_filters = [32, 64, 128, 256, 512]
 
@@ -223,28 +251,28 @@ def build_model(shape):
     Nearest-neighbor UpSampling followed by Conv2D & ReLU to dampen checkerboard artifacts.
     See: https://distill.pub/2016/deconv-checkerboard/
     """
-    d1 = attention_block(connections[3], b1)
+    d1 = attention_gate(connections[3], b1)
     d1 = UpSampling2D((2, 2))(d1)
     d1 = Conv2D(n_filters[4], (3, 3), padding="same")(d1)
     d1 = Activation("relu")(d1)
     d1 = Concatenate()([d1, connections[3]])
     d1 = cbam_resblock(d1, n_filters[3])
 
-    d2 = attention_block(connections[2], d1)
+    d2 = attention_gate(connections[2], d1)
     d2 = UpSampling2D((2, 2))(d2)
     d2 = Conv2D(n_filters[3], (3, 3), padding="same")(d2)
     d2 = Activation("relu")(d2)
     d2 = Concatenate()([d2, connections[2]])
     d2 = cbam_resblock(d2, n_filters[2])
 
-    d3 = attention_block(connections[1], d2)
+    d3 = attention_gate(connections[1], d2)
     d3 = UpSampling2D((2, 2))(d3)
     d3 = Conv2D(n_filters[2], (3, 3), padding="same")(d3)
     d3 = Activation("relu")(d3)
     d3 = Concatenate()([d3, connections[1]])
     d3 = cbam_resblock(d3, n_filters[1])
 
-    d4 = attention_block(connections[0], d3)
+    d4 = attention_gate(connections[0], d3)
     d4 = UpSampling2D((2, 2))(d4)
     d4 = Conv2D(n_filters[1], (3, 3), padding="same")(d4)
     d4 = Activation("relu")(d4)

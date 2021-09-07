@@ -9,16 +9,25 @@ from utils import *
 
 
 def train(training_dataset):
+    """
+    Train a model.
+    Dealing with the input shape of a model is a thorny problem thanks to various image
+    sizes of datasets. For the sake of simplicity, we use a fixed shape of (288, 384, 3) for all
+    training processes, with the added bonus of the shape being divisible by 4 (for pooling).
+
+    Args:
+        training_dataset: Dataset on which to train the model.
+    """
     train_path = f"aug_data/{training_dataset}/train/"
     valid_path = f"aug_data/{training_dataset}/valid/"
 
     train_x, train_y = load_dataset(train_path, cross_dataset=False)
-    train_x, train_y = shuffle_data(train_x, train_y)  # Shuffle
     valid_x, valid_y = load_dataset(valid_path, cross_dataset=False)
 
     train_dataset = tf_dataset(train_x, train_y, batch_size=batch_size)
     valid_dataset = tf_dataset(valid_x, valid_y, batch_size=batch_size)
 
+    # shape = train_dataset.element_spec[0].shape[1:]
     shape = (288, 384, 3)
     model = build_model(shape)
 
@@ -68,7 +77,7 @@ if __name__ == "__main__":
     ckpt_path = "logs/ckpt/" + timestamp + ".h5"
     csv_path = "logs/csv/" + timestamp + ".csv"
     log_dir = "logs/fit/" + timestamp
-    create_dir("logs/csv/")
+    create_dirs("logs/csv/")
 
     batch_size = 4
     epochs = 250

@@ -8,6 +8,9 @@ from utils import *
 def augment_data(images, masks, save_path, augment=True):
     """
     Data augmentation using albumentations.
+    These datasets have various image sizes. For simplicity, we resize all images
+    to a fixed size of (288, 384) in accordance with the model input shape.
+
     See: https://github.com/albumentations-team/albumentations
     """
     size = (384, 288)  # [W, H]
@@ -170,6 +173,7 @@ def augment_data(images, masks, save_path, augment=True):
             image_path = os.path.join(save_path, "images/", tmp_image_name)
             mask_path = os.path.join(save_path, "masks/", tmp_mask_name)
 
+            i = cv2.cvtColor(i, cv2.COLOR_RGB2BGR)  # Convert to BGR color space before calling #cv2.imwrite
             cv2.imwrite(image_path, i)
             cv2.imwrite(mask_path, m)
 
@@ -193,14 +197,14 @@ def load_data(path, split=0.1):
 
 def augment(dataset):
     """
-    Apply augmentation to the training dataset while keeping the valid and test dataset as they are.
+    Apply augmentation to the training dataset while keeping the validation and test datasets as they are.
     """
     data_path = f"dataset/{dataset}/"
     aug_data_path = f"aug_data/{dataset}/"
 
     for dir in ["train", "valid", "test"]:
         for subdir in ["images", "masks"]:
-            create_dir(os.path.join(aug_data_path, dir, subdir))
+            create_dirs(os.path.join(aug_data_path, dir, subdir))
 
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(data_path)
 
@@ -212,5 +216,7 @@ def augment(dataset):
 if __name__ == "__main__":
     np.random.seed(42)
 
-    for dataset in ["CVC-ClinicDB", "CVC-ColonDB", "ETIS-LaribPolypDB", "Kvasir-SEG"]:
+    datasets = ["CVC-ClinicDB", "CVC-ColonDB", "ETIS-LaribPolypDB", "Kvasir-SEG"]
+
+    for dataset in datasets:
         augment(dataset=dataset)
