@@ -173,7 +173,6 @@ def augment_data(images, masks, save_path, augment=True):
             image_path = os.path.join(save_path, "images/", tmp_image_name)
             mask_path = os.path.join(save_path, "masks/", tmp_mask_name)
 
-            i = cv2.cvtColor(i, cv2.COLOR_RGB2BGR)  # Convert to BGR color space before calling #cv2.imwrite
             cv2.imwrite(image_path, i)
             cv2.imwrite(mask_path, m)
 

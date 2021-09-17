@@ -43,7 +43,7 @@ def train(training_dataset):
 
     callbacks = [
         ModelCheckpoint(ckpt_path, verbose=1, save_best_only=True),
-        ReduceLROnPlateau(factor=0.1, patience=20),
+        ReduceLROnPlateau(factor=0.1, patience=5),
         CSVLogger(csv_path),
         TensorBoard(log_dir=log_dir),
         EarlyStopping(patience=20, restore_best_weights=False)

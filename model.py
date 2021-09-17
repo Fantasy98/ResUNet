@@ -6,6 +6,10 @@ from tensorflow.keras.utils import plot_model
 
 
 def stem_block(inputs, filters, strides):
+    """
+    Residual block for the first layer of Deep Residual U-Net.
+    See: https://arxiv.org/pdf/1711.10684.pdf
+    """
     # Conv
     x = Conv2D(filters, (3, 3), padding="same", strides=strides)(inputs)
     x = BatchNormalization()(x)
@@ -18,13 +22,35 @@ def stem_block(inputs, filters, strides):
 
     # Add
     outputs = Add()([x, s])
-    outputs = cbam_block(outputs)
+    return outputs
+
+
+def res_block(inputs, filters, strides=1):
+    """
+    Residual block with full pre-activation (BN-ReLU-weight-BN-ReLU-weight).
+    See: https://arxiv.org/pdf/1512.03385.pdf & https://arxiv.org/pdf/1603.05027v3.pdf
+    """
+    # Conv
+    x = BatchNormalization()(inputs)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=strides)(x)
+
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=1)(x)
+
+    # Shortcut
+    s = Conv2D(filters, (1, 1), padding="same", strides=strides)(inputs)
+    s = BatchNormalization()(s)
+
+    # Add
+    outputs = Add()([x, s])
     return outputs
 
 
 def aspp_block(inputs, filters):
     """
-    Atrous spatial pyramid pooling to capture multi-scale context.
+    Atrous Spatial Pyramid Pooling (ASPP) to capture multi-scale context.
     See: https://arxiv.org/pdf/1706.05587.pdf
     """
     shape = inputs.shape
@@ -62,7 +88,7 @@ def aspp_block(inputs, filters):
 
 def attention_gate(e, d):
     """
-    Attention gate taking advantage of low-level features.
+    Attention Gate taking advantage of low-level features.
 
     Args:
         e: output of parallel Encoder block

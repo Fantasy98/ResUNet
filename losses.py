@@ -142,6 +142,7 @@ def focal_loss(y_true, y_pred):
     See: https://arxiv.org/pdf/1708.02002.pdf
     Code from https://github.com/shruti-jadon/Semantic-Segmentation-Loss-Functions/blob/master/loss_functions.py#L54
     """
+
     def focal_loss_with_logits(logits, labels, alpha, gamma, y_pred):
         weight_a = alpha * (1 - y_pred) ** gamma * labels
         weight_b = (1 - alpha) * y_pred ** gamma * (1 - labels)

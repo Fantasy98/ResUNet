@@ -51,7 +51,7 @@ def evaluate(model_path, test_dataset_path, save_path, cross_dataset):
     if len(test_x) % batch_size != 0:
         test_steps += 1
 
-    model = load_model_weight(model_path)
+    model = load_model_weights(model_path)
     model.evaluate(test_dataset, steps=test_steps)
     write_result(model, test_x, test_y, save_path)
 
