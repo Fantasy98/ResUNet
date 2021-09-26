@@ -4,7 +4,7 @@ from tensorflow.keras.callbacks import *
 from tensorflow.keras.metrics import Precision, Recall, MeanIoU
 from tensorflow.keras.optimizers import Nadam
 
-from model import build_model
+from models.model import build_model
 from utils import *
 
 

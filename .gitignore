@@ -8,7 +8,7 @@ dataset/*
 !dataset/CVC-ClinicDB.rar
 
 *.pdf
-model.png
+models/*.png
 
 __pycache__/
 *.py[cod]
