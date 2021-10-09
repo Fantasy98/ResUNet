@@ -1,20 +1,15 @@
-# Residual U-Net with Attention Mechanisms
+# Residual UNet++ for Medical Image Segmentation
 
-Medical Image Segmentation using Residual U-Net with Attention Mechanisms.
+Medical Image Segmentation using Residual version of UNet++.
 
-The network takes advantage of residual blocks, Atrous Spatial Pyramid Pooling (ASPP), and channel- and spatial-attention blocks. We take ResNet50 as backbone to facilitate the training process.
+The network takes advantage of [Residual Blocks](https://arxiv.org/pdf/1603.05027v3.pdf) and [Convolutional Block Attention Module](https://arxiv.org/pdf/1807.06521.pdf) on top of the deep supervision mechanism of [UNet++](https://arxiv.org/pdf/1912.05074.pdf). We replace all pooling operations with convolutional layers with strides of 2 and `Conv2DTranspose` with nearest-neighbor `UpSampling` followed by Conv2D & ReLU to dampen [checkerboard artifacts](https://distill.pub/2016/deconv-checkerboard/).
 
 ## Network architecture
 
 <p align="center">
-    <img src="img/block_diagram.png" width="50%"/>
+    <img src="img/UNet++.png" width="80%"/>
 </p>
-<h6 align="center">Block diagram</h6>
-
-<p align="center">
-    <img src="img/3D_arch.png" width="85%"/>
-</p>
-<h6 align="center">3D architecture</h6>
+<h6 align="center">The original UNet++ architecture with deep supervision</h6>
 
 ## Datasets
 
@@ -47,9 +42,9 @@ After these operations, the number of training samples increased by 25 times.
 
 ## Hyperparameters
 
-- Bacth size: 4
+- Bacth size: 8
 - Epochs: 250
-- Learning rate: 1e-5
+- Initial learning rate: 1e-5
 - Optimizer: Nadam
 - Loss: Dice loss
 

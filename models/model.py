@@ -1,6 +1,29 @@
 from models.utils import *
 
 
+def res_block(inputs, filters, strides=(1, 1)):
+    """
+    Residual block with full pre-activation (BN-ReLU-weight-BN-ReLU-weight).
+    See: https://arxiv.org/pdf/1512.03385.pdf & https://arxiv.org/pdf/1603.05027v3.pdf
+    """
+    # Conv
+    x = BatchNormalization()(inputs)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=strides)(x)
+
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=(1, 1))(x)
+
+    # Shortcut
+    s = Conv2D(filters, (1, 1), padding="same", strides=strides)(inputs)
+    s = BatchNormalization()(s)
+
+    # Add
+    outputs = Add()([x, s])
+    return outputs
+
+
 def channel_attention_block(inputs, ratio=16):
     """
     Channel Attention Module exploiting the inter-channel relationship of features.
@@ -55,7 +78,7 @@ def cbam_block(inputs):
     Channel Attention Module and Spatial Attention Module, focusing on
     `what` and `where` respectively. The sequential channel-spatial order
     proves to perform best.
-    See: http://dx.doi.org/10.1007/978-3-030-01234-2_1
+    See: https://arxiv.org/pdf/1807.06521.pdf
     """
     x = channel_attention_block(inputs)
     x = spatial_attention_block(x)
@@ -91,7 +114,12 @@ def build_model(shape, num_class=1, deep_supervision=False):
     """
     Residual UNet++.
     Based on UNet++: Redesigning Skip Connections to Exploit Multiscale Features in Image Segmentation.
-    Nearest-neighbor UpSampling followed by Conv2D & ReLU to dampen checkerboard artifacts.
+
+    All pooling operations are replaced with convolutional layers with strides of 2 because the latter can learn
+    all necessary invariances, which is especially the case when the network is large enough.
+    See: https://arxiv.org/pdf/1412.6806.pdf
+
+    We use nearest-neighbor UpSampling followed by Conv2D & ReLU to dampen checkerboard artifacts.
     See: https://distill.pub/2016/deconv-checkerboard/
     """
     n_filters = [32, 64, 128, 256, 512]
@@ -192,6 +220,6 @@ def build_model(shape, num_class=1, deep_supervision=False):
 
 if __name__ == "__main__":
     shape = (288, 384, 3)
-    model = build_model(shape, deep_supervision=False)
+    model = build_model(shape, deep_supervision=True)
     model.summary()
     # plot_model(model, to_file='model.png', show_shapes=True)

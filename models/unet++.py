@@ -103,5 +103,5 @@ def unet_plus_plus(shape, num_class=1, deep_supervision=False):
 
 if __name__ == "__main__":
     shape = (288, 384, 3)
-    model = unet_plus_plus(shape, deep_supervision=False)
+    model = unet_plus_plus(shape, deep_supervision=True)
     model.summary()

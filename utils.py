@@ -25,8 +25,9 @@ def create_dirs(path):
 def get_filename(file):
     """
     Extract filename.
+    Be careful with the file separator: use "\\" in Windows, "/" in Linux.
     """
-    filename = file.split("\\")[-1].split(".")[0]
+    filename = file.split("/")[-1].split(".")[0]
     return filename
 
 
@@ -34,7 +35,7 @@ def get_extension(file):
     """
     Extract extension.
     """
-    extension = file.split("\\")[-1].split(".")[-1]
+    extension = file.split("/")[-1].split(".")[-1]
     return extension
 
 
