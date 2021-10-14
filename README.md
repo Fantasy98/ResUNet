@@ -1,8 +1,8 @@
 # Residual UNet++ for Medical Image Segmentation
 
-Medical Image Segmentation using Residual version of UNet++.
+Medical Image Segmentation using residual version of UNet++.
 
-The network takes advantage of [Residual Blocks](https://arxiv.org/pdf/1603.05027v3.pdf) and [Convolutional Block Attention Module](https://arxiv.org/pdf/1807.06521.pdf) on top of the deep supervision mechanism of [UNet++](https://arxiv.org/pdf/1912.05074.pdf). We replace all pooling operations with convolutional layers with strides of 2 and `Conv2DTranspose` with nearest-neighbor `UpSampling` followed by Conv2D & ReLU to dampen [checkerboard artifacts](https://distill.pub/2016/deconv-checkerboard/).
+The network takes advantage of [Residual Blocks](https://arxiv.org/pdf/1603.05027v3.pdf) and [Convolutional Block Attention Module](https://arxiv.org/pdf/1807.06521.pdf) on top of the deep supervision mechanism of [UNet++](https://arxiv.org/pdf/1912.05074.pdf). We replace all pooling operations with [convolutional layers with strides of 2](https://arxiv.org/pdf/1412.6806.pdf), and `Conv2DTranspose` is substituted with nearest-neighbor `UpSampling` followed by Conv2D & ReLU to dampen [checkerboard artifacts](https://distill.pub/2016/deconv-checkerboard/).
 
 ## Network architecture
 

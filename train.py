@@ -29,7 +29,7 @@ def train(training_dataset):
 
     # shape = train_dataset.element_spec[0].shape[1:]
     shape = (288, 384, 3)
-    model = build_model(shape)
+    model = build_model(shape, deep_supervision=True)
 
     optimizer = Nadam(learning_rate=learning_rate)
     metrics = [
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     log_dir = "logs/fit/" + timestamp
     create_dirs("logs/csv/")
 
-    batch_size = 4
+    batch_size = 8
     epochs = 250
     learning_rate = 1e-5
 

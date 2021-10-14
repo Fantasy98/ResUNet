@@ -18,7 +18,7 @@ def standard_unit(inputs, stage, filters, kernel_size=(3, 3)):
 def unet_plus_plus(shape, num_class=1, deep_supervision=False):
     """
     UNet++: Redesigning Skip Connections to Exploit Multiscale Features in Image Segmentation.
-    Paper: https://arxiv.org/pdf/1912.05074.pdf
+    Paper: https://arxiv.org/pdf/1807.10165.pdf & https://arxiv.org/pdf/1912.05074.pdf
     Code from: https://github.com/MrGiovanni/UNetPlusPlus
     """
     n_filters = [32, 64, 128, 256, 512]

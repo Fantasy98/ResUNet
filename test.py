@@ -39,7 +39,7 @@ def write_result(model, test_x, test_y, save_path):
         cv2.imwrite(os.path.join(save_path, f"{i}.png"), result)
 
 
-def evaluate(model_path, test_dataset_path, save_path, cross_dataset):
+def evaluate0(model_path, test_dataset_path, save_path, cross_dataset):
     """
     Evaluate the model and write the results.
     """
@@ -56,7 +56,7 @@ def evaluate(model_path, test_dataset_path, save_path, cross_dataset):
     write_result(model, test_x, test_y, save_path)
 
 
-def test(model_path, training_dataset):
+def evaluate(model_path, training_dataset):
     """
     Evaluate the model, including cross-dataset evaluation for its generalizability,
     in which case the test dataset is different from the training one.
@@ -77,7 +77,7 @@ def test(model_path, training_dataset):
             test_dataset_path = f"dataset/{test_dataset}/"
             save_path = f"results/{training_dataset}_X_{test_dataset}/"
 
-        evaluate(model_path, test_dataset_path=test_dataset_path, save_path=save_path, cross_dataset=cross_dataset)
+        evaluate0(model_path, test_dataset_path=test_dataset_path, save_path=save_path, cross_dataset=cross_dataset)
 
 
 if __name__ == "__main__":
@@ -86,4 +86,4 @@ if __name__ == "__main__":
 
     batch_size = 8
     model_path = "logs/ckpt/timestamp.h5"  # Replace with your model path
-    test(model_path, training_dataset="CVC-ClinicDB")
+    evaluate(model_path, training_dataset="CVC-ClinicDB")

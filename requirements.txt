@@ -2,4 +2,3 @@ tensorflow-gpu==2.6.0
 albumentations
 scikit-learn
 tqdm
-pydot
