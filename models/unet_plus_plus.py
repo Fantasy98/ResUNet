@@ -15,7 +15,7 @@ def standard_unit(inputs, stage, filters, kernel_size=(3, 3)):
     return x
 
 
-def unet_plus_plus(shape, num_class=1, deep_supervision=False):
+def unet_plus_plus(shape=(256, 256, 3), num_classes=1, deep_supervision=False):
     """
     UNet++: Redesigning Skip Connections to Exploit Multiscale Features in Image Segmentation.
     Paper: https://arxiv.org/pdf/1807.10165.pdf & https://arxiv.org/pdf/1912.05074.pdf
@@ -79,13 +79,13 @@ def unet_plus_plus(shape, num_class=1, deep_supervision=False):
     conv1_5 = concatenate([up1_5, conv1_1, conv1_2, conv1_3, conv1_4], name='merge15', axis=3)
     conv1_5 = standard_unit(conv1_5, stage='15', filters=n_filters[0])
 
-    nestnet_output_1 = Conv2D(num_class, (1, 1), activation='sigmoid', name='output_1', kernel_initializer='he_normal',
+    nestnet_output_1 = Conv2D(num_classes, (1, 1), activation='sigmoid', name='output_1', kernel_initializer='he_normal',
                               padding='same', kernel_regularizer=l2(1e-4))(conv1_2)
-    nestnet_output_2 = Conv2D(num_class, (1, 1), activation='sigmoid', name='output_2', kernel_initializer='he_normal',
+    nestnet_output_2 = Conv2D(num_classes, (1, 1), activation='sigmoid', name='output_2', kernel_initializer='he_normal',
                               padding='same', kernel_regularizer=l2(1e-4))(conv1_3)
-    nestnet_output_3 = Conv2D(num_class, (1, 1), activation='sigmoid', name='output_3', kernel_initializer='he_normal',
+    nestnet_output_3 = Conv2D(num_classes, (1, 1), activation='sigmoid', name='output_3', kernel_initializer='he_normal',
                               padding='same', kernel_regularizer=l2(1e-4))(conv1_4)
-    nestnet_output_4 = Conv2D(num_class, (1, 1), activation='sigmoid', name='output_4', kernel_initializer='he_normal',
+    nestnet_output_4 = Conv2D(num_classes, (1, 1), activation='sigmoid', name='output_4', kernel_initializer='he_normal',
                               padding='same', kernel_regularizer=l2(1e-4))(conv1_5)
 
     if deep_supervision:
@@ -102,6 +102,5 @@ def unet_plus_plus(shape, num_class=1, deep_supervision=False):
 
 
 if __name__ == "__main__":
-    shape = (288, 384, 3)
-    model = unet_plus_plus(shape, deep_supervision=True)
+    model = unet_plus_plus()
     model.summary()

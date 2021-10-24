@@ -27,7 +27,7 @@ def backbone(inputs):
     return outputs
 
 
-def fcn_8s(shape, num_class=1):
+def fcn_8s(shape=(256, 256, 3), num_classes=1):
     """
     Fully Convolutional Networks for Semantic Segmentation.
     The `at-once` FCN-8s is fine-tuned from VGG-16 all-at-once by scaling the
@@ -38,26 +38,23 @@ def fcn_8s(shape, num_class=1):
     inputs = Input(shape)
     pools = backbone(inputs)
 
-    x1 = Conv2D(num_class, (1, 1), padding='same')(pools[2])
-    x1 = Conv2DTranspose(num_class, (4, 4), strides=(4, 4), padding='same')(x1)
+    x1 = Conv2D(21, (1, 1), padding='same')(pools[2])
+    x1 = Conv2DTranspose(21, (4, 4), strides=(2, 2), padding='same')(x1)
 
-    x2 = Conv2D(num_class, (1, 1), padding='same')(pools[1])
-    x2 = Conv2DTranspose(num_class, (2, 2), strides=(2, 2), padding='same')(x2)
+    x2 = Conv2D(21, (1, 1), padding='same')(pools[1])
+    x2 = Add()([x1, x2])
+    x2 = Conv2DTranspose(21, (4, 4), strides=(2, 2), padding='same')(x2)
 
-    x3 = Conv2D(num_class, (1, 1), padding='same')(pools[0])
-    x3 = Conv2DTranspose(num_class, (1, 1), strides=(1, 1), padding='same')(x3)
+    x3 = Conv2D(21, (1, 1), padding='same')(pools[0])
+    x3 = Add()([x2, x3])
+    x3 = Conv2DTranspose(21, (16, 16), strides=(8, 8), padding='same')(x3)
 
-    x = Add()([x1, x2, x3])
-    x = Conv2DTranspose(num_class, (8, 8), strides=(8, 8), padding='same')(x)
-
-    x = Conv2D(num_class, (1, 1), padding='same')(x)
-    outputs = Activation("sigmoid")(x)
+    outputs = Conv2D(num_classes, (1, 1), padding='same', activation='sigmoid')(x3)
 
     model = Model(inputs, outputs)
     return model
 
 
 if __name__ == "__main__":
-    shape = (288, 384, 3)
-    model = fcn_8s(shape)
+    model = fcn_8s()
     model.summary()

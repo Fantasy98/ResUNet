@@ -102,7 +102,7 @@ def attetion_block(g, x):
     return gc_mul
 
 
-def resunet_plus_plus(shape):
+def resunet_plus_plus(shape=(256, 256, 3)):
     """
     ResUNet++: An Advanced Architecture for Medical Image Segmentation.
     Paper: https://arxiv.org/pdf/1911.07067.pdf
@@ -150,6 +150,5 @@ def resunet_plus_plus(shape):
 
 
 if __name__ == "__main__":
-    shape = (288, 384, 3)
-    model = resunet_plus_plus(shape)
+    model = resunet_plus_plus()
     model.summary()

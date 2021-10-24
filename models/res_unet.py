@@ -124,7 +124,7 @@ def decoder(x, encoder_output, num_filters, kernel_size):
     return x
 
 
-def res_unet(shape, kernel_size=(3, 3), num_classes=1):
+def res_unet(shape=(256, 256, 3), kernel_size=(3, 3), num_classes=1):
     """
     Road Extraction by Deep Residual U-Net.
     Paper: https://arxiv.org/pdf/1711.10684.pdf
@@ -132,10 +132,11 @@ def res_unet(shape, kernel_size=(3, 3), num_classes=1):
 
     Function that generates a residual unet
     Args:
-        kernel_size: size of the kernel, applied to all convolutions
-        num_classes: int, number of output classes for the output
+        shape: shape of input images.
+        kernel_size: size of the kernel, applied to all convolutions.
+        num_classes: int, number of output classes for the output.
     Returns:
-        model: tensorflow keras model for residual unet architecture
+        model: tensorflow keras model for residual unet architecture.
     """
     n_filters = [64, 128, 256]
 
@@ -158,6 +159,5 @@ def res_unet(shape, kernel_size=(3, 3), num_classes=1):
 
 
 if __name__ == "__main__":
-    shape = (288, 384, 3)
-    model = res_unet(shape)
+    model = res_unet()
     model.summary()

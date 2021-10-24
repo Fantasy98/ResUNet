@@ -5,7 +5,7 @@ from utils import *
 
 def mask_to_3c(mask):
     """
-    Convert single-channel mask to 3-channel (288, 384, 1) -> (288, 384, 3).
+    Convert a single-channel mask to 3-channel (256, 256, 1) -> (256, 256, 3).
     """
     mask = np.repeat(mask, 3, axis=-1)
     return mask
@@ -46,7 +46,7 @@ def evaluate0(model_path, test_dataset_path, save_path, cross_dataset):
     test_x, test_y = load_dataset(test_dataset_path, cross_dataset=cross_dataset)
 
     test_dataset = tf_dataset(test_x, test_y, batch_size=batch_size)
-    test_steps = (len(test_x) // batch_size)
+    test_steps = len(test_x) // batch_size
 
     if len(test_x) % batch_size != 0:
         test_steps += 1

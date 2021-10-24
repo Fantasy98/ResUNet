@@ -149,7 +149,7 @@ def ASPP(x, filter):
     return y
 
 
-def double_unet(shape):
+def double_unet(shape=(256, 256, 3)):
     """
     DoubleU-Net: A Deep Convolutional Neural Network for Medical Image Segmentation.
     Paper: https://arxiv.org/pdf/2006.04868.pdf
@@ -174,6 +174,5 @@ def double_unet(shape):
 
 
 if __name__ == "__main__":
-    shape = (288, 384, 3)
-    model = double_unet(shape)
+    model = double_unet()
     model.summary()

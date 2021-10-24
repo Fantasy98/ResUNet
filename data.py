@@ -9,12 +9,12 @@ def augment_data(images, masks, save_path, augment=True):
     """
     Data augmentation using albumentations.
     These datasets have various image sizes. For simplicity, we resize all images
-    to a fixed size of (288, 384) in accordance with the model input shape.
+    to a fixed size of (256, 256) in accordance with the model input shape.
 
     See: https://github.com/albumentations-team/albumentations
     """
-    size = (384, 288)  # [W, H]
-    crop_size = (288 - 32, 384 - 32)  # [H, W]
+    size = (256, 256)  # [W, H]
+    crop_size = (256 - 32, 256 - 32)  # [H, W]
 
     for image, mask in tqdm(zip(images, masks), total=len(images)):
         image_name = get_filename(image)

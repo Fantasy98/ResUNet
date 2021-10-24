@@ -1,7 +1,7 @@
 from models.utils import *
 
 
-def unet(shape=(256, 256, 1)):
+def unet(shape=(256, 256, 3)):
     """
     U-Net: Convolutional Networks for Biomedical Image Segmentation.
     Paper: https://arxiv.org/pdf/1505.04597.pdf
@@ -74,6 +74,5 @@ def unet(shape=(256, 256, 1)):
 
 
 if __name__ == "__main__":
-    shape = (288, 384, 3)
-    model = unet(shape)
+    model = unet()
     model.summary()

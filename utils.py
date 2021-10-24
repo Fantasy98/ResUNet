@@ -25,7 +25,7 @@ def create_dirs(path):
 def get_filename(file):
     """
     Extract filename.
-    Be careful with the file separator: use "\\" in Windows, "/" in Linux.
+    Be careful with the file separator: use "\\" if "/" doesn't work.
     """
     filename = file.split("/")[-1].split(".")[0]
     return filename
@@ -76,9 +76,9 @@ def read_data(image, mask):
 
 def normalize(image):
     """
-    Normalize the image/mask, and resize it for cross-dataset evaluation.
+    Normalize the image/mask, and resize it to a fixed shape of (256, 256).
     """
-    image = cv2.resize(image, (384, 288))
+    image = cv2.resize(image, (256, 256))
     image = image / 255.
     image = image.astype(np.float32)
 
@@ -110,20 +110,22 @@ def map_func(images, masks):
     images, masks = tf.numpy_function(func=func, inp=[images, masks], Tout=[tf.float32, tf.float32])
 
     # Restore dataset shapes (the dataset loses its shape after applying a tf.numpy_function)
-    images.set_shape([288, 384, 3])
-    masks.set_shape([288, 384, 1])
+    images.set_shape([256, 256, 3])
+    masks.set_shape([256, 256, 1])
 
     return images, masks
 
 
 def tf_dataset(images, masks, batch_size=8):
     """
-    Generate tf dataset.
+    Generate tf dataset. There is a difference in the order of `shuffle`, `repeat` and `batch`.
+    `Repeat` before `shuffle` seems to provide better performance.
+    See: https://stackoverflow.com/questions/49915925/output-differences-when-changing-order-of-batch-shuffle-and-repeat
     """
     dataset = tf.data.Dataset.from_tensor_slices(tensors=(images, masks)) \
+        .repeat() \
         .shuffle(buffer_size=len(images)) \
         .map(map_func=map_func) \
-        .repeat() \
         .batch(batch_size=batch_size) \
         .prefetch(buffer_size=tf.data.AUTOTUNE)
 
@@ -159,10 +161,7 @@ def load_model_weights(path):
     with CustomObjectScope({
         'dice_coef': dice_coef,
         'dice_loss': dice_loss,
-        'focal_loss': focal_loss,
-        'dice_focal_loss': dice_focal_loss,
-        'dice_topk_loss': dice_topk_loss,
-        'focal_tversky_loss': focal_tversky_loss
+        'focal_loss': focal_loss
     }):
         model = load_model(path)
 
