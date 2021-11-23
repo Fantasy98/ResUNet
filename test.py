@@ -15,7 +15,7 @@ def write_result(model, test_x, test_y, save_path):
     """
     Write the image, ground truth and prediction into one single image.
     """
-    create_dirs(save_path)
+    make_dirs(save_path)
 
     for i, (x, y) in tqdm(enumerate(zip(test_x, test_y)), total=len(test_x)):
         x, y = read_and_normalize_data(x, y)
@@ -45,7 +45,7 @@ def evaluate0(model_path, test_dataset_path, save_path, cross_dataset):
     """
     test_x, test_y = load_dataset(test_dataset_path, cross_dataset=cross_dataset)
 
-    test_dataset = tf_dataset(test_x, test_y, batch_size=batch_size)
+    test_dataset = tf_dataset(test_x, test_y, batch_size=batch_size, epochs=1)
     test_steps = len(test_x) // batch_size
 
     if len(test_x) % batch_size != 0:
@@ -65,18 +65,18 @@ def evaluate(model_path, training_dataset):
         model_path: Path from which to load the trained model.
         training_dataset: Dataset on which the model is trained.
     """
+    model_name = get_filename(model_path)
     datasets = ["CVC-ClinicDB", "CVC-ColonDB", "ETIS-LaribPolypDB", "Kvasir-SEG"]
 
     for test_dataset in datasets:
         if test_dataset == training_dataset:
             cross_dataset = False
             test_dataset_path = f"aug_data/{test_dataset}/test/"
-            save_path = f"results/{test_dataset}/"
         else:
             cross_dataset = True
             test_dataset_path = f"dataset/{test_dataset}/"
-            save_path = f"results/{training_dataset}_X_{test_dataset}/"
 
+        save_path = f"results/{model_name}/{training_dataset}_X_{test_dataset}/"
         evaluate0(model_path, test_dataset_path=test_dataset_path, save_path=save_path, cross_dataset=cross_dataset)
 
 
@@ -85,5 +85,5 @@ if __name__ == "__main__":
     tf.random.set_seed(42)
 
     batch_size = 8
-    model_path = "logs/ckpt/timestamp.h5"  # Replace with your model path
+    model_path = "logs/CVC-ClinicDB/ckpt/model.h5"  # Replace with your model path
     evaluate(model_path, training_dataset="CVC-ClinicDB")

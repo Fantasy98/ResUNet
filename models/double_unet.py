@@ -169,7 +169,7 @@ def double_unet(shape=(256, 256, 3)):
     outputs2 = output_block(x)
     outputs = Concatenate()([outputs1, outputs2])
 
-    model = Model(inputs, outputs)
+    model = Model(inputs, outputs, name="double_unet")
     return model
 
 

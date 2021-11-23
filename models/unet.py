@@ -68,7 +68,7 @@ def unet(shape=(256, 256, 3)):
     conv9 = Conv2D(2, (3, 3), activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
     conv10 = Conv2D(1, (1, 1), activation='sigmoid')(conv9)
 
-    model = Model(inputs=inputs, outputs=conv10)
+    model = Model(inputs=inputs, outputs=conv10, name="unet")
 
     return model
 

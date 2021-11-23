@@ -203,7 +203,7 @@ def augment(dataset):
 
     for dir in ["train", "valid", "test"]:
         for subdir in ["images", "masks"]:
-            create_dirs(os.path.join(aug_data_path, dir, subdir))
+            make_dirs(os.path.join(aug_data_path, dir, subdir))
 
     (train_x, train_y), (valid_x, valid_y), (test_x, test_y) = load_data(data_path)
 

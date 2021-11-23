@@ -1,3 +1,5 @@
+from tensorflow.keras.regularizers import l2
+
 from models.utils import *
 
 dropout_rate = 0.5
@@ -96,7 +98,7 @@ def unet_plus_plus(shape=(256, 256, 3), num_classes=1, deep_supervision=False):
     else:
         outputs = [nestnet_output_4]
 
-    model = Model(inputs=inputs, outputs=outputs)
+    model = Model(inputs=inputs, outputs=outputs, name="unet_plus_plus")
 
     return model
 

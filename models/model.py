@@ -1,6 +1,4 @@
-from tensorflow.keras import backend as K
-from tensorflow.keras.layers import *
-from tensorflow.keras.models import Model
+from models.utils import *
 
 
 def stem_block(inputs, filters, strides):
@@ -50,6 +48,25 @@ def res_block(inputs, filters, strides=1):
     return outputs
 
 
+def res_block_no_stride(inputs, filters):
+    """
+    Residual block with full pre-activation (BN-ReLU-weight-BN-ReLU-weight).
+    See: https://arxiv.org/pdf/1512.03385.pdf & https://arxiv.org/pdf/1603.05027v3.pdf
+    """
+    # Conv
+    x = BatchNormalization()(inputs)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=1)(x)
+
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=1)(x)
+
+    # Add
+    outputs = Add()([x, inputs])
+    return outputs
+
+
 def aspp_block(inputs, filters):
     """
     Atrous Spatial Pyramid Pooling (ASPP) to capture multi-scale context.
@@ -88,9 +105,9 @@ def aspp_block(inputs, filters):
     return outputs
 
 
-def attention_gate(e, d):
+def attention_block(e, d):
     """
-    Attention Gate taking advantage of low-level features.
+    Attention block taking advantage of low-level features.
     Args:
         e: output of parallel Encoder block
         d: output of previous Decoder block
@@ -204,45 +221,79 @@ def cbam_resblock(inputs, filters, strides=1):
     return outputs
 
 
+def cbam_resblock_no_stride(inputs, filters):
+    """
+    Residual block with Convolutional Block Attention Module.
+    """
+    # Conv
+    x = BatchNormalization()(inputs)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=1)(x)
+
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    x = Conv2D(filters, (3, 3), padding="same", strides=1)(x)
+
+    # CBAM
+    x = cbam_block(x)
+
+    # Add
+    outputs = Concatenate()([x, inputs])
+
+    outputs = Conv2D(filters, (3, 3), padding="same")(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Activation('relu')(outputs)
+
+    return outputs
+
+
 def build_model(shape=(256, 256, 3), num_classes=1):
     """
     Build a model with fixed input shape [N, H, W, C].
     """
-    n_filters = [64, 128, 256, 512]
+    n_filters = [32, 64, 128, 256, 512]
 
     inputs = Input(shape)
 
     # Encoder
     c0 = cbam_block(inputs)
-    c1 = cbam_resblock(c0, n_filters[0], strides=2)
-    c2 = cbam_resblock(c1, n_filters[1], strides=2)
-    c3 = cbam_resblock(c2, n_filters[2], strides=2)
+
+    c1 = cbam_resblock_no_stride(c0, n_filters[0])
+    c1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(c1)
+
+    c2 = cbam_resblock_no_stride(c1, n_filters[1])
+    c2 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(c2)
+
+    c3 = cbam_resblock_no_stride(c2, n_filters[2])
+    c3 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(c3)
 
     # Bridge
-    b1 = aspp_block(c3, n_filters[3])
+    # b1 = aspp_block(c3, n_filters[3])
+    b1 = cbam_resblock_no_stride(c3, n_filters[3])
+    # b1 = cbam_block(c3)
 
     # Decoder
     """ 
     Nearest-neighbor UpSampling followed by Conv2D & ReLU to dampen checkerboard artifacts.
     See: https://distill.pub/2016/deconv-checkerboard/
     """
-    d1 = attention_gate(c2, b1)
-    d1 = Conv2D(n_filters[2], (2, 2), padding="same", activation='relu', kernel_initializer='he_normal')(
+    d1 = attention_block(c2, b1)
+    d1 = Conv2D(n_filters[2], (3, 3), padding="same", activation='relu', kernel_initializer='he_normal')(
         UpSampling2D(size=(2, 2))(d1))
     d1 = Concatenate()([d1, c2])
-    d1 = cbam_resblock(d1, n_filters[2])
+    d1 = cbam_resblock_no_stride(d1, n_filters[2])
 
-    d2 = attention_gate(c1, d1)
-    d2 = Conv2D(n_filters[1], (2, 2), padding="same", activation='relu', kernel_initializer='he_normal')(
+    d2 = attention_block(c1, d1)
+    d2 = Conv2D(n_filters[1], (3, 3), padding="same", activation='relu', kernel_initializer='he_normal')(
         UpSampling2D(size=(2, 2))(d2))
     d2 = Concatenate()([d2, c1])
-    d2 = cbam_resblock(d2, n_filters[1])
+    d2 = cbam_resblock_no_stride(d2, n_filters[1])
 
-    d3 = attention_gate(c0, d2)
-    d3 = Conv2D(n_filters[0], (2, 2), padding="same", activation='relu', kernel_initializer='he_normal')(
+    d3 = attention_block(c0, d2)
+    d3 = Conv2D(n_filters[0], (3, 3), padding="same", activation='relu', kernel_initializer='he_normal')(
         UpSampling2D(size=(2, 2))(d3))
     d3 = Concatenate()([d3, c0])
-    d3 = cbam_resblock(d3, n_filters[0])
+    d3 = cbam_resblock_no_stride(d3, n_filters[0])
 
     # Output
     outputs = Conv2D(num_classes, (1, 1), padding="same")(d3)

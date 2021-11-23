@@ -117,7 +117,7 @@ def decoder(x, encoder_output, num_filters, kernel_size):
         layer = 'decoder_layer' + str(i)
         target_size = encoder_output[-i].shape[1:3]
         x = upsample(x, target_size)
-        print(x.shape, encoder_output[-i].shape)
+        # print(x.shape, encoder_output[-i].shape)
         x = Concatenate(axis=-1)([x, encoder_output[-i]])
         x = res_block(x, [num_filters[-i]], kernel_size, strides=[1, 1], name=layer)
 
@@ -147,13 +147,13 @@ def res_unet(shape=(256, 256, 3), kernel_size=(3, 3), num_classes=1):
     # bridge layer, number of filters is double that of the last encoder layer
     bridge = res_block(encoder_output[-1], [n_filters[-1] * 2], kernel_size, strides=[2, 1], name='bridge')
 
-    print(encoder_output[-1].shape)
+    # print(encoder_output[-1].shape)
     decoder_output = decoder(bridge, encoder_output, n_filters, kernel_size)
 
     outputs = Conv2D(num_classes, (1, 1), padding='same', name='output')(decoder_output)
     outputs = Activation("sigmoid")(outputs)
 
-    model = Model(x, outputs)
+    model = Model(x, outputs, name="res_unet")
 
     return model
 

@@ -145,7 +145,7 @@ def resunet_plus_plus(shape=(256, 256, 3)):
     outputs = Activation("sigmoid")(outputs)
 
     # Model
-    model = Model(inputs, outputs)
+    model = Model(inputs, outputs, name="resunet_plus_plus")
     return model
 
 

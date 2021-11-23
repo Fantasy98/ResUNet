@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from tensorflow.keras.callbacks import *
 from tensorflow.keras.metrics import Precision, Recall, MeanIoU
 from tensorflow.keras.optimizers import *
@@ -24,8 +22,8 @@ def train(training_dataset):
     train_x, train_y = load_dataset(train_path, cross_dataset=False)
     valid_x, valid_y = load_dataset(valid_path, cross_dataset=False)
 
-    train_dataset = tf_dataset(train_x, train_y, batch_size=batch_size)
-    valid_dataset = tf_dataset(valid_x, valid_y, batch_size=batch_size)
+    train_dataset = tf_dataset(train_x, train_y, batch_size=batch_size, epochs=epochs)
+    valid_dataset = tf_dataset(valid_x, valid_y, batch_size=batch_size, epochs=epochs)
 
     shape = (256, 256, 3)
     model = build_model(shape)
@@ -39,6 +37,14 @@ def train(training_dataset):
     ]
 
     model.compile(loss=dice_loss, optimizer=optimizer, metrics=metrics)
+
+    log_path = f"logs/{training_dataset}"
+    model_name = model.name
+
+    ckpt_path = f"{log_path}/ckpt/{model_name}.h5"
+    csv_path = f"{log_path}/csv/{model_name}.csv"
+    log_dir = f"{log_path}/fit/{model_name}"
+    make_dirs(f"{log_path}/csv/")
 
     callbacks = [
         ModelCheckpoint(ckpt_path, verbose=1, save_best_only=True),
@@ -57,26 +63,20 @@ def train(training_dataset):
     if len(valid_x) % batch_size != 0:
         valid_steps += 1
 
-    model.fit(train_dataset,
-              validation_data=valid_dataset,
-              steps_per_epoch=train_steps,
-              validation_steps=valid_steps,
-              callbacks=callbacks,
-              epochs=epochs,
-              shuffle=False)
+    history = model.fit(train_dataset,
+                        validation_data=valid_dataset,
+                        steps_per_epoch=train_steps,
+                        validation_steps=valid_steps,
+                        callbacks=callbacks,
+                        epochs=epochs,
+                        shuffle=False)
+
+    return history
 
 
 if __name__ == "__main__":
     np.random.seed(42)
     tf.random.set_seed(42)
-
-    # Place the logs in a timestamped subdirectory to allow easy selection of different training runs
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-
-    ckpt_path = "logs/ckpt/" + timestamp + ".h5"
-    csv_path = "logs/csv/" + timestamp + ".csv"
-    log_dir = "logs/fit/" + timestamp
-    create_dirs("logs/csv/")
 
     batch_size = 8
     epochs = 250

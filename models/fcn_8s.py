@@ -51,7 +51,7 @@ def fcn_8s(shape=(256, 256, 3), num_classes=1):
 
     outputs = Conv2D(num_classes, (1, 1), padding='same', activation='sigmoid')(x3)
 
-    model = Model(inputs, outputs)
+    model = Model(inputs, outputs, name="fcn_8s")
     return model
 
 

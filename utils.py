@@ -11,7 +11,7 @@ from tifffile import tifffile
 from losses import *
 
 
-def create_dirs(path):
+def make_dirs(path):
     """
     Create directories if not exist.
     """
@@ -116,15 +116,17 @@ def map_func(images, masks):
     return images, masks
 
 
-def tf_dataset(images, masks, batch_size=8):
+def tf_dataset(images, masks, batch_size=8, epochs=250):
     """
     Generate tf dataset. There is a difference in the order of `shuffle`, `repeat` and `batch`.
-    `Repeat` before `shuffle` seems to provide better performance.
+    `Repeat` before `shuffle` blurs the epoch boundaries and provides better performance, whereas
+    `shuffle` before `repeat` may lose (slightly) in performance but guarantees that all elements
+    appear once (and only once) in an epoch. `Batch` should be one of the last operations in the pipeline.
     See: https://stackoverflow.com/questions/49915925/output-differences-when-changing-order-of-batch-shuffle-and-repeat
     """
     dataset = tf.data.Dataset.from_tensor_slices(tensors=(images, masks)) \
-        .repeat() \
-        .shuffle(buffer_size=len(images)) \
+        .repeat(epochs) \
+        .shuffle(buffer_size=len(images), reshuffle_each_iteration=True) \
         .map(map_func=map_func) \
         .batch(batch_size=batch_size) \
         .prefetch(buffer_size=tf.data.AUTOTUNE)
