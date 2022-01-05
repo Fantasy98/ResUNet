@@ -45,7 +45,7 @@ def evaluate0(model_path, test_dataset_path, save_path, cross_dataset):
     """
     test_x, test_y = load_dataset(test_dataset_path, cross_dataset=cross_dataset)
 
-    test_dataset = tf_dataset(test_x, test_y, batch_size=batch_size, epochs=1)
+    test_dataset = tf_dataset(test_x, test_y, batch_size=batch_size, training=False)
     test_steps = len(test_x) // batch_size
 
     if len(test_x) % batch_size != 0:

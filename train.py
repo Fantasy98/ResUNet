@@ -22,8 +22,8 @@ def train(training_dataset):
     train_x, train_y = load_dataset(train_path, cross_dataset=False)
     valid_x, valid_y = load_dataset(valid_path, cross_dataset=False)
 
-    train_dataset = tf_dataset(train_x, train_y, batch_size=batch_size, epochs=epochs)
-    valid_dataset = tf_dataset(valid_x, valid_y, batch_size=batch_size, epochs=epochs)
+    train_dataset = tf_dataset(train_x, train_y, batch_size=batch_size)
+    valid_dataset = tf_dataset(valid_x, valid_y, batch_size=batch_size)
 
     shape = (256, 256, 3)
     model = build_model(shape)
@@ -51,7 +51,7 @@ def train(training_dataset):
         ReduceLROnPlateau(factor=0.1, patience=5),
         CSVLogger(csv_path),
         TensorBoard(log_dir=log_dir),
-        EarlyStopping(patience=20, restore_best_weights=False)
+        EarlyStopping(patience=15, restore_best_weights=False)
     ]
 
     train_steps = len(train_x) // batch_size
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     np.random.seed(42)
     tf.random.set_seed(42)
 
-    batch_size = 8
+    batch_size = 4
     epochs = 250
-    learning_rate = 1e-3
+    learning_rate = 1e-4
 
     train(training_dataset="CVC-ClinicDB")

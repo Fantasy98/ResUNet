@@ -116,7 +116,7 @@ def map_func(images, masks):
     return images, masks
 
 
-def tf_dataset(images, masks, batch_size=8, epochs=250):
+def tf_dataset(images, masks, batch_size=8, training=True):
     """
     Generate tf dataset. There is a difference in the order of `shuffle`, `repeat` and `batch`.
     `Repeat` before `shuffle` blurs the epoch boundaries and provides better performance, whereas
@@ -124,8 +124,9 @@ def tf_dataset(images, masks, batch_size=8, epochs=250):
     appear once (and only once) in an epoch. `Batch` should be one of the last operations in the pipeline.
     See: https://stackoverflow.com/questions/49915925/output-differences-when-changing-order-of-batch-shuffle-and-repeat
     """
+    repeat = 250 if training else 1
     dataset = tf.data.Dataset.from_tensor_slices(tensors=(images, masks)) \
-        .repeat(epochs) \
+        .repeat(repeat) \
         .shuffle(buffer_size=len(images), reshuffle_each_iteration=True) \
         .map(map_func=map_func) \
         .batch(batch_size=batch_size) \
