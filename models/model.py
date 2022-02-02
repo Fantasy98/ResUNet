@@ -27,11 +27,11 @@ def ca_stem_block(inputs, filters, strides=1):
 
 def feature_fusion(high, low):
     """
-    Low- and high-level feature fusion, taking advantage of low-level contextual information.
+    Low- and high-level feature fusion, taking advantage of multi-level contextual information.
 
     Args:
-        high: high-level semantic information.
-        low: low-level feature map with more contextual information.
+        high: high-level semantic information in the contracting path.
+        low: low-level feature map in the symmetric expanding path.
 
     See: https://arxiv.org/pdf/1804.03999.pdf
     """
@@ -221,9 +221,15 @@ def build_model(shape=(256, 256, 3), num_classes=1):
 
     # Encoder
     c0 = ca_stem_block(inputs, n_filters[0])
-    c1 = cbam_resblock(c0, n_filters[1], strides=2)
-    c2 = cbam_resblock(c1, n_filters[2], strides=2)
-    c3 = cbam_resblock(c2, n_filters[3], strides=2)
+
+    c1 = cbam_resblock(c0, n_filters[1], strides=1)
+    c1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(c1)
+
+    c2 = cbam_resblock(c1, n_filters[2], strides=1)
+    c2 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(c2)
+
+    c3 = cbam_resblock(c2, n_filters[3], strides=1)
+    c3 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(c3)
 
     # Bridge
     b1 = sa_resblock(c3, n_filters[4])

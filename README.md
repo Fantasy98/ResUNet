@@ -1,8 +1,8 @@
-# Residual U-Net with Attention Mechanisms
+# Residual U-Net with Channel-wise and Spatial Attention
 
-Medical Image Segmentation using Residual U-Net with Attention Mechanisms.
+Medical Image Segmentation using Residual U-Net with Channel-wise and Spatial Attention.
 
-The network takes advantage of [Residual Blocks](https://arxiv.org/pdf/1603.05027v3.pdf), [Atrous Spatial Pyramid Pooling](https://arxiv.org/pdf/1706.05587.pdf), and [Convolutional Block Attention Module](https://arxiv.org/pdf/1807.06521.pdf). Channel-wise and spatial attention are integrated with residual blocks to exploit inter-channel and inter-spatial relationships of intermediate features. In addition, nearest-neighbor `UpSampling` followed by Conv2D & ReLU is employed to dampen [checkerboard artifacts](https://distill.pub/2016/deconv-checkerboard/) during image restoration.
+The network takes advantage of [Residual Blocks](https://arxiv.org/pdf/1603.05027v3.pdf), [Convolutional Block Attention Module](https://arxiv.org/pdf/1807.06521.pdf) and high- and low-level feature fusion. Channel-wise and spatial attention are integrated with residual blocks to exploit inter-channel and inter-spatial relationships of intermediate features. In addition, nearest-neighbor UpSampling followed by Conv2D & ReLU is employed to dampen [checkerboard artifacts](https://distill.pub/2016/deconv-checkerboard/) during image restoration.
 
 ## Network architecture
 
@@ -28,11 +28,11 @@ The following publicly available datasets are used in the experiments:
 | [Kvasir-SEG](https://datasets.simula.no/kvasir-seg/)         | 1000            | Variable                   |
 | [Kvasir-Sessile](https://datasets.simula.no/kvasir-seg/)*    | 196             | Variable                   |
 
-*As a subset of Kvasir-SEG which includes 196 polyps smaller than 10 mm, Kvasir-Sessile is used to evaluate the robustness of segmentation models trained on Kvasir-SEG.
+*As a subset of Kvasir-SEG, Kvasir-Sessile includes 196 polyps smaller than 10 mm and is used to evaluate the robustness of segmentation models trained on Kvasir-SEG.
 
 ## Image preprocessing
 
-The following transformations are done with the help of [albumentations](https://github.com/albumentations-team/albumentations):
+The following transformations are applied to the training subsets with the help of [albumentations](https://github.com/albumentations-team/albumentations):
 
 - Crop, flip, rotate, transpose
 - Random brightness contrast
