@@ -1,6 +1,6 @@
 # Residual U-Net with Channel-wise and Spatial Attention
 
-Medical Image Segmentation using Residual U-Net with Channel-wise and Spatial Attention.
+Medical Image Segmentation Using Residual U-Net with Channel-wise and Spatial Attention.
 
 The network takes advantage of [Residual Blocks](https://arxiv.org/pdf/1603.05027v3.pdf), [Convolutional Block Attention Module](https://arxiv.org/pdf/1807.06521.pdf) and high- and low-level feature fusion. Channel-wise and spatial attention are integrated with residual blocks to exploit inter-channel and inter-spatial relationships of intermediate features. In addition, nearest-neighbor UpSampling followed by Conv2D & ReLU is employed to dampen [checkerboard artifacts](https://distill.pub/2016/deconv-checkerboard/) during image restoration.
 
